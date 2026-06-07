@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maromba-burguer-v4';
+const CACHE_NAME = 'maromba-burguer-v5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -34,7 +34,15 @@ self.addEventListener('fetch', event => {
 
   // NUNCA cacheia chamadas de API — sempre vai para a rede
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+    );
+    return;
+  }
+
+  // Também não cacheia maromba.js para garantir updates
+  if (url.pathname.includes('maromba.js')) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
     return;
   }
 
