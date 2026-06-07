@@ -660,7 +660,7 @@ function updateClientFooter() {
 }
 
 async function confirmClientOrder(tableNumber) {
-j  const items = Object.entries(clientSelections)
+  const items = Object.entries(clientSelections)
     .filter(([,qty]) => qty > 0)
     .map(([id,qty]) => { const p = stock.find(x => x.id === id); return p ? { productId:p.id, name:p.name, price:p.price, quantity:qty } : null; })
     .filter(Boolean);
