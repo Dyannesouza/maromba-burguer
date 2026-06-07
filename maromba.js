@@ -73,7 +73,40 @@ const DEFAULT_MENU_IDS = DEFAULT_PRODUCTS.map(p => p.id);
 
 const DEFAULT_TABLES = ['01','02','03','04','05','06'];
 
-// ── STORAGE ─────────────────────────────────────
+// ── API CLIENT ──────────────────────────────────────
+const API_BASE = window.location.protocol !== 'file:' ? '' : '';
+const USE_API  = window.location.protocol !== 'file:';
+
+const API = {
+  async get(path) {
+    try {
+      const r = await fetch(API_BASE + path);
+      return await r.json();
+    } catch { return null; }
+  },
+  async post(path, data) {
+    try {
+      const r = await fetch(API_BASE + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await r.json();
+    } catch { return null; }
+  },
+  async put(path, data) {
+    try {
+      const r = await fetch(API_BASE + path, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await r.json();
+    } catch { return null; }
+  },
+};
+
+// ── LOCAL STORAGE FALLBACK ───────────────────────────
 const S = {
   get(k)       { try { return localStorage.getItem(k); } catch { try { return sessionStorage.getItem(k); } catch { return null; } } },
   set(k, v)    { try { localStorage.setItem(k, v); } catch { try { sessionStorage.setItem(k, v); } catch {} } },
@@ -94,42 +127,58 @@ let adminMenuCat = 'all';
 let adminStockCat = 'all';
 
 // ── INIT ──────────────────────────────────────────
-function loadData() {
-  // Se a versão dos dados mudou, limpa tudo e reinicia com defaults
-  const savedVersion = parseInt(S.get('mb-version') || '0');
-  if (savedVersion < DATA_VERSION) {
-    ['mb-stock','mb-orders','mb-tables','mb-menu'].forEach(k => {
-      try { localStorage.removeItem(k); } catch {}
-      try { sessionStorage.removeItem(k); } catch {}
-    });
-    S.set('mb-version', String(DATA_VERSION));
-  }
+async function loadData() {
+  if (USE_API) {
+    // Carrega dados do servidor (compartilhado entre todos os dispositivos)
+    const [apiOrders, apiStock, apiTables, apiMenu] = await Promise.all([
+      API.get('/api/orders'),
+      API.get('/api/stock'),
+      API.get('/api/tables'),
+      API.get('/api/menu'),
+    ]);
 
-  const savedStock = S.parse('mb-stock', null);
-  if (!savedStock || !savedStock.length) {
-    stock = DEFAULT_PRODUCTS.map(p => ({ ...p }));
-    S.save('mb-stock', stock);
+    orders  = apiOrders  || [];
+    stock   = (apiStock  && apiStock.length)  ? apiStock  : DEFAULT_PRODUCTS.map(p => ({ ...p }));
+    tables  = (apiTables && apiTables.length) ? apiTables : DEFAULT_TABLES.map(n => ({ number: n }));
+    menuIds = (apiMenu   && apiMenu.length)   ? apiMenu   : stock.map(p => p.id);
+
+    // Se não havia dados no servidor, salva os defaults
+    if (!apiStock  || !apiStock.length)  await API.post('/api/stock',  stock);
+    if (!apiTables || !apiTables.length) await API.post('/api/tables', tables);
+    if (!apiMenu   || !apiMenu.length)   await API.post('/api/menu',   menuIds);
   } else {
-    stock = savedStock;
-  }
-
-  orders  = S.parse('mb-orders', []);
-  tables  = S.parse('mb-tables', DEFAULT_TABLES.map(n => ({ number: n })));
-
-  const savedMenu = S.parse('mb-menu', null);
-  if (!savedMenu) {
-    menuIds = stock.map(p => p.id);
-    S.save('mb-menu', menuIds);
-  } else {
-    menuIds = savedMenu;
+    // Fallback local (desenvolvimento via file://)
+    const savedVersion = parseInt(S.get('mb-version') || '0');
+    if (savedVersion < DATA_VERSION) {
+      ['mb-stock','mb-orders','mb-tables','mb-menu'].forEach(k => {
+        try { localStorage.removeItem(k); } catch {}
+        try { sessionStorage.removeItem(k); } catch {}
+      });
+      S.set('mb-version', String(DATA_VERSION));
+    }
+    const savedStock = S.parse('mb-stock', null);
+    stock   = (savedStock && savedStock.length) ? savedStock : DEFAULT_PRODUCTS.map(p => ({ ...p }));
+    orders  = S.parse('mb-orders', []);
+    tables  = S.parse('mb-tables', DEFAULT_TABLES.map(n => ({ number: n })));
+    const savedMenu = S.parse('mb-menu', null);
+    menuIds = savedMenu || stock.map(p => p.id);
   }
 }
 
-function saveAll() {
-  S.save('mb-stock',  stock);
-  S.save('mb-orders', orders);
-  S.save('mb-tables', tables);
-  S.save('mb-menu',   menuIds);
+async function saveAll() {
+  if (USE_API) {
+    await Promise.all([
+      API.post('/api/orders', orders),
+      API.post('/api/stock',  stock),
+      API.post('/api/tables', tables),
+      API.post('/api/menu',   menuIds),
+    ]);
+  } else {
+    S.save('mb-stock',  stock);
+    S.save('mb-orders', orders);
+    S.save('mb-tables', tables);
+    S.save('mb-menu',   menuIds);
+  }
 }
 
 // ── HELPERS ───────────────────────────────────────
@@ -407,20 +456,27 @@ function saveOrder() {
   if (editOrderId) {
     const o = orders.find(x => x.id === editOrderId);
     if (o) Object.assign(o, { items, customer, phone, notes });
+    if (USE_API) await API.put('/api/orders/' + editOrderId, o);
   } else {
-    orders.unshift({ id:uid(), table:tableNumber, customer, phone, notes, items, status:'Pendente', createdAt:new Date().toISOString() });
+    const newOrder = { id:uid(), table:tableNumber, customer, phone, notes, items, status:'Pendente', createdAt:new Date().toISOString() };
+    orders.unshift(newOrder);
     items.forEach(i => { const p = productById(i.productId); if (p) p.quantity = Math.max(0, p.quantity - i.quantity); });
+    if (USE_API) await API.post('/api/orders', newOrder);
   }
-  saveAll(); renderAll(); closeModal('modalOrder');
+  await saveAll(); renderAll(); closeModal('modalOrder');
   toast(editOrderId ? 'Pedido atualizado!' : 'Pedido criado!');
   editOrderId = null;
 }
 
-function advanceStatus(orderId) {
+async function advanceStatus(orderId) {
   const o = orders.find(x => x.id === orderId);
   if (!o) return;
   const next = { 'Pendente':'Em preparo', 'Em preparo':'Entregue' };
-  if (next[o.status]) { o.status = next[o.status]; saveAll(); renderAll(); toast('Status atualizado!'); }
+  if (next[o.status]) {
+    o.status = next[o.status];
+    if (USE_API) await API.put('/api/orders/' + orderId, { status: o.status });
+    await saveAll(); renderAll(); toast('Status atualizado!');
+  }
 }
 
 // ── PAYMENT ───────────────────────────────────────
@@ -434,13 +490,14 @@ function openPayment(orderId) {
   openModal('modalPayment');
 }
 
-function confirmPayment() {
+async function confirmPayment() {
   const o = orders.find(x => x.id === payOrderId);
   if (!o) return;
   o.status = 'Pago';
   o.paymentMethod = document.querySelector('[name=payMethod]:checked')?.value || 'Dinheiro';
   o.paidAt = new Date().toISOString();
-  saveAll(); renderAll(); closeModal('modalPayment');
+  if (USE_API) await API.put('/api/orders/' + payOrderId, { status: o.status, paymentMethod: o.paymentMethod, paidAt: o.paidAt });
+  await saveAll(); renderAll(); closeModal('modalPayment');
   toast(`Conta fechada — ${o.paymentMethod} ✅`);
 }
 
@@ -697,14 +754,22 @@ function wireBtns() {
 function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdminMenu(); }
 
 // ── MAIN ──────────────────────────────────────────
-(function main() {
-  loadData();
+(async function main() {
+  await loadData();
   if (isClientMode()) {
     initClientMode();
   } else {
     initTabs(); wireBtns(); renderAll();
   }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+  // Auto-refresh pedidos a cada 5 segundos (só no painel admin online)
+  if (USE_API && !isClientMode()) {
+    setInterval(async () => {
+      const fresh = await API.get('/api/orders');
+      if (fresh) { orders = fresh; renderOrders(); }
+    }, 5000);
+  }
 
   // ── PWA Install prompt ──────────────────────────
   let deferredPrompt = null;

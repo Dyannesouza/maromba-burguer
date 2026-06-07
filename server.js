@@ -1,12 +1,6 @@
 /**
- * MAROMBA BURGUER — Servidor Local
- * 
- * Como usar:
- *   1. Abra o terminal nesta pasta
- *   2. Execute:  node server.js
- *   3. Acesse no navegador:  http://localhost:3000
- *   4. O celular acessa pelo IP exibido no terminal
- *      — celular e computador precisam estar no mesmo Wi-Fi
+ * MAROMBA BURGUER — Servidor com API de dados
+ * Os pedidos ficam em memória no servidor (compartilhado entre todos os clientes)
  */
 
 const http = require('node:http');
@@ -14,7 +8,7 @@ const fs   = require('node:fs');
 const path = require('node:path');
 const os   = require('node:os');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 
 const MIME = {
@@ -29,6 +23,16 @@ const MIME = {
   '.webp': 'image/webp',
 };
 
+// ── BANCO DE DADOS EM MEMÓRIA ─────────────────────
+// Persiste enquanto o servidor estiver rodando
+// No Railway, reinicia ao fazer redeploy (dados zerados)
+let db = {
+  orders: [],
+  stock:  null,  // null = usa os defaults do frontend
+  tables: null,
+  menu:   null,
+};
+
 function getLocalIP() {
   const ifaces = os.networkInterfaces();
   for (const name of Object.keys(ifaces)) {
@@ -39,17 +43,114 @@ function getLocalIP() {
   return 'localhost';
 }
 
-const server = http.createServer(function(req, res) {
-  let urlPath = req.url.split('?')[0];
-  if (urlPath === '/' || urlPath === '') urlPath = '/index.html';
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); }
+      catch { resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}
 
-  const filePath = path.join(ROOT, urlPath);
-  const ext      = path.extname(filePath).toLowerCase();
+function jsonResponse(res, data, status = 200) {
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  });
+  res.end(JSON.stringify(data));
+}
+
+const server = http.createServer(async function (req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+  const url = req.url.split('?')[0];
+
+  // ── API ROUTES ──────────────────────────────────
+  if (url.startsWith('/api/')) {
+
+    // GET /api/orders — lista todos os pedidos
+    if (url === '/api/orders' && req.method === 'GET') {
+      return jsonResponse(res, db.orders);
+    }
+
+    // POST /api/orders — cria novo pedido
+    if (url === '/api/orders' && req.method === 'POST') {
+      const body = await readBody(req);
+      db.orders.unshift(body);
+      return jsonResponse(res, { ok: true, order: body });
+    }
+
+    // PUT /api/orders/:id — atualiza pedido
+    if (url.startsWith('/api/orders/') && req.method === 'PUT') {
+      const id = url.replace('/api/orders/', '');
+      const body = await readBody(req);
+      const idx = db.orders.findIndex(o => o.id === id);
+      if (idx !== -1) {
+        db.orders[idx] = { ...db.orders[idx], ...body };
+        return jsonResponse(res, { ok: true, order: db.orders[idx] });
+      }
+      return jsonResponse(res, { ok: false }, 404);
+    }
+
+    // GET /api/stock
+    if (url === '/api/stock' && req.method === 'GET') {
+      return jsonResponse(res, db.stock || []);
+    }
+
+    // POST /api/stock — salva estoque completo
+    if (url === '/api/stock' && req.method === 'POST') {
+      const body = await readBody(req);
+      db.stock = body;
+      return jsonResponse(res, { ok: true });
+    }
+
+    // GET /api/tables
+    if (url === '/api/tables' && req.method === 'GET') {
+      return jsonResponse(res, db.tables || []);
+    }
+
+    // POST /api/tables
+    if (url === '/api/tables' && req.method === 'POST') {
+      const body = await readBody(req);
+      db.tables = body;
+      return jsonResponse(res, { ok: true });
+    }
+
+    // GET /api/menu
+    if (url === '/api/menu' && req.method === 'GET') {
+      return jsonResponse(res, db.menu || []);
+    }
+
+    // POST /api/menu
+    if (url === '/api/menu' && req.method === 'POST') {
+      const body = await readBody(req);
+      db.menu = body;
+      return jsonResponse(res, { ok: true });
+    }
+
+    return jsonResponse(res, { error: 'Not found' }, 404);
+  }
+
+  // ── STATIC FILES ────────────────────────────────
+  let filePath = url === '/' ? '/index.html' : url;
+  filePath = path.normalize(path.join(ROOT, filePath));
+  if (!filePath.startsWith(ROOT)) { res.writeHead(403); res.end('Forbidden'); return; }
+
+  const ext = path.extname(filePath).toLowerCase();
   const mimeType = MIME[ext] || 'application/octet-stream';
 
-  fs.readFile(filePath, function(err, data) {
+  fs.readFile(filePath, function (err, data) {
     if (err) {
-      fs.readFile(path.join(ROOT, 'index.html'), function(err2, fallback) {
+      fs.readFile(path.join(ROOT, 'index.html'), function (err2, fallback) {
         if (err2) { res.writeHead(404); res.end('Not found'); return; }
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(fallback);
@@ -61,16 +162,12 @@ const server = http.createServer(function(req, res) {
   });
 });
 
-server.listen(PORT, '0.0.0.0', function() {
+server.listen(PORT, '0.0.0.0', function () {
   const ip = getLocalIP();
-  const pad = '                  ';
-  console.log('\n\u2554' + '\u2550'.repeat(52) + '\u2557');
-  console.log('\u2551    \uD83C\uDF54  MAROMBA BURGUER \u2014 Servidor Local         \u2551');
-  console.log('\u2560' + '\u2550'.repeat(52) + '\u2563');
-  console.log('\u2551  Computador :  http://localhost:' + PORT + pad.slice(0,16) + '\u2551');
-  console.log('\u2551  Celular/QR :  http://' + ip + ':' + PORT + pad.slice(ip.length) + '\u2551');
-  console.log('\u2560' + '\u2550'.repeat(52) + '\u2563');
-  console.log('\u2551  Celular e PC precisam estar no mesmo Wi-Fi    \u2551');
-  console.log('\u2551  Pressione Ctrl+C para encerrar                \u2551');
-  console.log('\u255A' + '\u2550'.repeat(52) + '\u255D\n');
+  console.log('\n╔══════════════════════════════════════════════════╗');
+  console.log('║      🍔  MAROMBA BURGUER — Servidor Online       ║');
+  console.log('╠══════════════════════════════════════════════════╣');
+  console.log(`║  Local:  http://localhost:${PORT}                    ║`);
+  console.log(`║  Rede:   http://${ip}:${PORT}               ║`);
+  console.log('╚══════════════════════════════════════════════════╝\n');
 });
