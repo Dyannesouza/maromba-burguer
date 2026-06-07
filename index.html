@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="description" content="Maromba Burguer — Sistema de gestão para hamburguerias." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="logo.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Maromba Burguer" />
+  <title>Maromba Burguer — Painel de Gestão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     ADMIN SHELL
+══════════════════════════════════════════════ -->
+<div id="adminShell">
+
+  <header class="site-header">
+    <div class="brand-row">
+      <div class="brand-logo" aria-label="Logo"></div>
+      <div>
+        <div class="brand-name">Maromba <span>Burguer</span></div>
+        <div class="brand-sub">Painel de Gestão</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-lg" id="btnNewOrder">＋ Novo Pedido</button>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- TABS -->
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="dashboard" type="button">
+        <span class="tab-icon">🍔</span> Dashboard
+      </button>
+      <button class="tab-btn" data-tab="finance" type="button">
+        <span class="tab-icon">💰</span> Financeiro
+      </button>
+      <button class="tab-btn" data-tab="stock" type="button">
+        <span class="tab-icon">📦</span> Estoque
+      </button>
+      <button class="tab-btn" data-tab="menu" type="button">
+        <span class="tab-icon">📋</span> Cardápio
+      </button>
+    </nav>
+
+    <!-- ── DASHBOARD ── -->
+    <section id="tab-dashboard" class="section-content">
+
+      <!-- KPI Row -->
+      <div class="card-grid" id="kpiGrid"></div>
+
+      <!-- Active Orders -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>🔥 Pedidos em andamento</h2>
+            <p>Pedidos abertos que precisam de atenção.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pedido</th><th>Mesa</th><th>Cliente</th>
+                <th>Itens</th><th>Valor</th><th>Status</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbActive"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Closed Orders -->
+      <div class="card">
+        <div class="card-header">
+          <h2>✅ Pedidos finalizados</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pedido</th><th>Mesa</th><th>Cliente</th>
+                <th>Valor</th><th>Pagamento</th><th>Finalizado em</th>
+              </tr>
+            </thead>
+            <tbody id="tbDone"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tables -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>🪑 Mesas &amp; QR Code</h2>
+            <p>Clique em "Abrir" para criar um pedido. Use o QR Code para autoatendimento pelo celular.</p>
+          </div>
+          <button class="btn btn-success btn-sm" id="btnNewTable">+ Mesa</button>
+        </div>
+        <div class="tables-grid" id="tablesGrid"></div>
+      </div>
+
+    </section>
+
+    <!-- ── FINANCEIRO ── -->
+    <section id="tab-finance" class="section-content hidden">
+      <div class="card-grid" id="financeKpi"></div>
+      <div class="card">
+        <div class="card-header"><h2>💳 Receita por forma de pagamento</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Forma</th><th>Pedidos</th><th>Total</th></tr></thead>
+            <tbody id="tbPayments"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>🗂️ Histórico completo</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pedido</th><th>Mesa</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Data</th></tr></thead>
+            <tbody id="tbFinanceAll"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ESTOQUE ── -->
+    <section id="tab-stock" class="section-content hidden">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>📦 Estoque de produtos</h2>
+            <p>Gerencie os produtos disponíveis para o cardápio e pedidos.</p>
+          </div>
+          <button class="btn btn-success btn-sm" id="btnAddStock">+ Adicionar</button>
+        </div>
+        <div class="category-bar mt-12" id="stockCatBar"></div>
+        <div class="table-wrap mt-12">
+          <table>
+            <thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Qtd.</th><th>Ações</th></tr></thead>
+            <tbody id="tbStock"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CARDÁPIO ── -->
+    <section id="tab-menu" class="section-content hidden">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>📋 Cardápio</h2>
+            <p>Itens visíveis para clientes no autoatendimento por QR Code.</p>
+          </div>
+          <button class="btn btn-success btn-sm" id="btnAddMenu">+ Adicionar</button>
+        </div>
+        <div class="category-bar mt-12" id="adminCatBar"></div>
+        <div class="table-wrap mt-12">
+          <table>
+            <thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr></thead>
+            <tbody id="tbMenu"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CLIENT MENU (QR Mode)
+══════════════════════════════════════════════ -->
+<div id="clientShell" class="client-shell hidden">
+  <div class="client-header">
+    <div class="brand-logo" aria-label="Logo"></div>
+    <div>
+      <h1>Maromba Burguer</h1>
+      <p id="clientTableLabel">Mesa 01</p>
+    </div>
+  </div>
+
+  <div class="client-cat-bar" id="clientCatBar"></div>
+  <div class="client-grid" id="clientGrid"></div>
+
+  <div class="client-footer">
+    <div class="client-total-info">
+      <span class="client-total-label">Total</span>
+      <span class="client-total-value" id="clientTotalVal">R$ 0,00</span>
+    </div>
+    <span class="text-muted text-sm" id="clientItemsCount">0 itens</span>
+    <button class="btn-confirm-order" id="btnClientConfirm" disabled>Confirmar Pedido</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════ -->
+<div class="modal-backdrop hidden" id="backdrop"></div>
+
+<!-- Order Modal -->
+<div class="modal hidden" id="modalOrder" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalOrderTitle">Novo Pedido</h3>
+      <button class="btn btn-secondary btn-sm" data-close="modalOrder">✕ Fechar</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px">
+        <div class="field">
+          <label>Mesa</label>
+          <input type="text" id="fTable" readonly />
+        </div>
+        <div class="field">
+          <label>Cliente</label>
+          <input type="text" id="fCustomer" placeholder="Ex: João Silva" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Telefone</label>
+        <input type="text" id="fPhone" placeholder="(XX) XXXXX-XXXX" />
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="fNotes" placeholder="Ex: sem cebola, ponto bem passado…"></textarea>
+      </div>
+      <div>
+        <div class="flex-between gap-10" style="margin-bottom:10px">
+          <span class="font-cond text-muted text-sm" style="text-transform:uppercase;letter-spacing:.08em">Itens do pedido</span>
+          <button class="btn btn-secondary btn-sm" id="btnAddItem">+ Item</button>
+        </div>
+        <div id="itemsList" class="items-list"></div>
+      </div>
+      <div class="order-summary-bar">
+        <span class="text-muted text-sm"><span id="sumItems">0</span> itens</span>
+        <span class="order-total" id="sumTotal">R$ 0,00</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" data-close="modalOrder">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveOrder">Salvar Pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal hidden" id="modalPayment" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-head">
+      <h3>Fechar Conta</h3>
+      <button class="btn btn-secondary btn-sm" data-close="modalPayment">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="font-cond text-muted text-sm" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Pedido</div>
+        <div style="font-weight:700;font-size:1rem" id="payOrderLabel"></div>
+      </div>
+      <div>
+        <div class="font-cond text-muted text-sm" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Total a pagar</div>
+        <div class="pay-total" id="payTotal"></div>
+      </div>
+      <div class="field">
+        <label>Forma de pagamento</label>
+        <div class="radio-group">
+          <label><input type="radio" name="payMethod" value="Dinheiro" checked /> 💵 Dinheiro (Espécie)</label>
+          <label><input type="radio" name="payMethod" value="Pix" /> 📲 Pix Instantâneo</label>
+          <label><input type="radio" name="payMethod" value="Cartão" /> 💳 Cartão (Débito/Crédito)</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" data-close="modalPayment">Voltar</button>
+      <button class="btn btn-primary" id="btnConfirmPayment">✅ Confirmar e Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Modal -->
+<div class="modal hidden" id="modalStock" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-head">
+      <h3 id="modalStockTitle">Adicionar Produto</h3>
+      <button class="btn btn-secondary btn-sm" data-close="modalStock">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fStockId" />
+      <div class="field">
+        <label>Nome do produto</label>
+        <input type="text" id="fStockName" placeholder="Ex: X-Bacon Duplo" />
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field">
+          <label>Preço (R$)</label>
+          <input type="number" id="fStockPrice" min="0" step="0.01" placeholder="34.90" />
+        </div>
+        <div class="field">
+          <label>Quantidade</label>
+          <input type="number" id="fStockQty" min="0" step="1" placeholder="50" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="fStockCat">
+          <option value="hamburgues">🍔 Hambúrgueres</option>
+          <option value="acompanhamentos">🍟 Acompanhamentos</option>
+          <option value="bebidas">🥤 Bebidas</option>
+          <option value="sobremesas">🍨 Sobremesas</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Descrição (opcional)</label>
+        <textarea id="fStockDesc" placeholder="Ex: Blend 150g, cheddar, bacon e molho especial." style="min-height:60px"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" data-close="modalStock">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveStock">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menu Modal -->
+<div class="modal hidden" id="modalMenu" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-head">
+      <h3>Adicionar ao Cardápio</h3>
+      <button class="btn btn-secondary btn-sm" data-close="modalMenu">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Produto do estoque</label>
+        <select id="fMenuProduct"></select>
+      </div>
+      <div class="field">
+        <label>Categoria no cardápio</label>
+        <select id="fMenuCat">
+          <option value="hamburgues">🍔 Hambúrgueres</option>
+          <option value="acompanhamentos">🍟 Acompanhamentos</option>
+          <option value="bebidas">🥤 Bebidas</option>
+          <option value="sobremesas">🍨 Sobremesas</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" data-close="modalMenu">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveMenu">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal hidden" id="modalQR" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-head">
+      <h3 id="qrTitle">QR Code — Mesa</h3>
+      <button class="btn btn-secondary btn-sm" data-close="modalQR">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;gap:16px">
+      <div class="qr-wrap" id="qrContainer"></div>
+      <p id="qrLinkText" class="qr-link"></p>
+      <p class="text-muted text-sm">Escaneie para abrir o cardápio e fazer o pedido direto do celular.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="maromba.js" defer></script>
+</body>
+</html>

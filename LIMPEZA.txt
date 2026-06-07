@@ -1,0 +1,26 @@
+INSTRUÇÕES PARA LIMPAR CACHE E TESTAR:
+
+1. FECHE completamente o navegador (todas as abas)
+
+2. ABRA O NAVEGADOR e acesse:
+   - CTRL+SHIFT+Delete (para abrir histórico/cache)
+   - Ou acesse Configurações > Privacidade e Segurança > Limpar Dados de Navegação
+   - Marque: "Cookies e dados de sites" + "Arquivos armazenados em cache"
+   - Selecione "Todos os tempos"
+   - Clique em "Limpar dados"
+
+3. ACESSE a página novamente:
+   - Abra: file:///C:/Users/Delete/Desktop/DYANNE/MarombaBurguer/index.html
+   - (NÃO abra maromba1.html ou qualquer outro arquivo antigo)
+
+4. TESTE O QR CODE:
+   - Clique no botão "QRcode" de qualquer mesa
+   - Verifique se o link aparece corretamente
+   - Copie e cole o link em uma nova aba para testar
+
+5. VERIFIQUE O LAYOUT:
+   - "Pedidos em andamento" deve estar ACIMA
+   - "Pedidos finalizados" deve estar ABAIXO
+   - (Não devem estar lado a lado)
+
+Se ainda não funcionar, contate o desenvolvedor com prints do problema.
