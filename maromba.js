@@ -439,7 +439,7 @@ function recalcSummary() {
   document.getElementById('sumTotal').textContent  = fmt(total);
 }
 
-function saveOrder() {
+async function saveOrder() {
   const tableNumber = document.getElementById('fTable').value;
   const customer    = document.getElementById('fCustomer').value.trim() || 'Cliente';
   const phone       = document.getElementById('fPhone').value.trim();
@@ -659,8 +659,8 @@ function updateClientFooter() {
   document.getElementById('btnClientConfirm').disabled = count === 0;
 }
 
-function confirmClientOrder(tableNumber) {
-  const items = Object.entries(clientSelections)
+async function confirmClientOrder(tableNumber) {
+j  const items = Object.entries(clientSelections)
     .filter(([,qty]) => qty > 0)
     .map(([id,qty]) => { const p = stock.find(x => x.id === id); return p ? { productId:p.id, name:p.name, price:p.price, quantity:qty } : null; })
     .filter(Boolean);
