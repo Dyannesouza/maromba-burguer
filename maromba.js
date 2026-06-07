@@ -137,10 +137,10 @@ async function loadData() {
       API.get('/api/menu'),
     ]);
 
-    orders  = apiOrders  || [];
-    stock   = (apiStock  && apiStock.length)  ? apiStock  : DEFAULT_PRODUCTS.map(p => ({ ...p }));
-    tables  = (apiTables && apiTables.length) ? apiTables : DEFAULT_TABLES.map(n => ({ number: n }));
-    menuIds = (apiMenu   && apiMenu.length)   ? apiMenu   : stock.map(p => p.id);
+    orders  = Array.isArray(apiOrders)  ? apiOrders  : [];
+    stock   = Array.isArray(apiStock)  && apiStock.length  ? apiStock  : DEFAULT_PRODUCTS.map(p => ({ ...p }));
+    tables  = Array.isArray(apiTables) && apiTables.length ? apiTables : DEFAULT_TABLES.map(n => ({ number: n }));
+    menuIds = Array.isArray(apiMenu)   && apiMenu.length   ? apiMenu   : stock.map(p => p.id);
 
     // Se não havia dados no servidor, salva os defaults
     if (!apiStock  || !apiStock.length)  await API.post('/api/stock',  stock);
@@ -767,7 +767,7 @@ function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdmi
   if (USE_API && !isClientMode()) {
     setInterval(async () => {
       const fresh = await API.get('/api/orders');
-      if (fresh) { orders = fresh; renderOrders(); }
+      if (Array.isArray(fresh)) { orders = fresh; renderOrders(); }
     }, 5000);
   }
 
