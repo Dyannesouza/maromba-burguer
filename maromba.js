@@ -761,7 +761,15 @@ function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdmi
   } else {
     initTabs(); wireBtns(); renderAll();
   }
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Service Worker apenas no painel admin — no modo cliente (QR) desativa para garantir API funcionando
+  if ('serviceWorker' in navigator) {
+    if (isClientMode()) {
+      // Desregistra qualquer SW no modo cliente para não bloquear chamadas de API
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+    } else {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  }
 
   // Auto-refresh pedidos a cada 5 segundos (só no painel admin online)
   if (USE_API && !isClientMode()) {
