@@ -458,7 +458,7 @@ async function saveOrder() {
     if (o) Object.assign(o, { items, customer, phone, notes });
     if (USE_API) await API.put('/api/orders/' + editOrderId, o);
   } else {
-    const newOrder = { id:uid(), table:tableNumber, customer, phone, notes, items, status:'Pendente', createdAt:new Date().toISOString() };
+    const newOrder = { id:uid(), table:String(tableNumber), customer:String(customer), phone:String(phone||''), notes:String(notes||''), items:items.map(i=>({productId:String(i.productId),name:String(i.name),price:Number(i.price),quantity:Number(i.quantity)})), status:'Pendente', createdAt:new Date().toISOString() };
     orders.unshift(newOrder);
     items.forEach(i => { const p = productById(i.productId); if (p) p.quantity = Math.max(0, p.quantity - i.quantity); });
     if (USE_API) await API.post('/api/orders', newOrder);

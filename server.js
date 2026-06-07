@@ -85,7 +85,15 @@ const server = http.createServer(async function (req, res) {
     // POST /api/orders — cria novo pedido
     if (url === '/api/orders' && req.method === 'POST') {
       const body = await readBody(req);
-      db.orders.unshift(body);
+      // Valida campos obrigatórios
+      if (body && body.id && body.table) {
+        // Garante que items é sempre array
+        body.items = Array.isArray(body.items) ? body.items : [];
+        // Remove pedido duplicado se existir
+        db.orders = db.orders.filter(o => o.id !== body.id);
+        db.orders.unshift(body);
+        console.log('Novo pedido:', body.id, 'Mesa', body.table, body.items.length, 'itens');
+      }
       return jsonResponse(res, { ok: true, order: body });
     }
 
