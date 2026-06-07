@@ -137,7 +137,7 @@ async function loadData() {
       API.get('/api/menu'),
     ]);
 
-    orders  = Array.isArray(apiOrders)  ? apiOrders  : [];
+    orders  = Array.isArray(apiOrders) ? apiOrders.map(o => ({...o, items: Array.isArray(o.items) ? o.items : []})) : [];
     stock   = Array.isArray(apiStock)  && apiStock.length  ? apiStock  : DEFAULT_PRODUCTS.map(p => ({ ...p }));
     tables  = Array.isArray(apiTables) && apiTables.length ? apiTables : DEFAULT_TABLES.map(n => ({ number: n }));
     menuIds = Array.isArray(apiMenu)   && apiMenu.length   ? apiMenu   : stock.map(p => p.id);
@@ -184,7 +184,7 @@ async function saveAll() {
 // ── HELPERS ───────────────────────────────────────
 const fmt       = v => `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
 const uid       = () => 'PED' + String(Date.now()).slice(-6);
-const orderTotal = o => o.items.reduce((s, i) => s + i.price * i.quantity, 0);
+const orderTotal = o => (o.items||[]).reduce((s, i) => s + i.price * i.quantity, 0);
 const productById = id => stock.find(p => p.id === id);
 
 function getStatusBadge(status) {
@@ -253,7 +253,7 @@ function renderOrders() {
       <td><strong>${o.id}</strong></td>
       <td>Mesa ${o.table}</td>
       <td>${o.customer}</td>
-      <td class="text-muted">${o.items.length} item(s)</td>
+      <td class="text-muted">${(o.items||[]).length} item(s)</td>
       <td class="text-yellow font-cond">${fmt(orderTotal(o))}</td>
       <td>${getStatusBadge(o.status)}</td>
       <td><div class="flex gap-8">
@@ -767,7 +767,7 @@ function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdmi
   if (USE_API && !isClientMode()) {
     setInterval(async () => {
       const fresh = await API.get('/api/orders');
-      if (Array.isArray(fresh)) { orders = fresh; renderOrders(); }
+      if (Array.isArray(fresh)) { orders = fresh.map(o => ({...o, items: Array.isArray(o.items) ? o.items : []})); renderOrders(); }
     }, 5000);
   }
 
