@@ -2,6 +2,9 @@
    MAROMBA BURGUER — maromba.js
 ═══════════════════════════════════════════════ */
 
+// ── DATA VERSION (bump to force localStorage reset) ──
+const DATA_VERSION = 3;
+
 // ── CONSTANTS ──────────────────────────────────
 const CAT_LABELS = {
   hamburgues:      '🍔 Hambúrgueres',
@@ -92,8 +95,17 @@ let adminStockCat = 'all';
 
 // ── INIT ──────────────────────────────────────────
 function loadData() {
+  // Se a versão dos dados mudou, limpa tudo e reinicia com defaults
+  const savedVersion = parseInt(S.get('mb-version') || '0');
+  if (savedVersion < DATA_VERSION) {
+    ['mb-stock','mb-orders','mb-tables','mb-menu'].forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
+      try { sessionStorage.removeItem(k); } catch {}
+    });
+    S.set('mb-version', String(DATA_VERSION));
+  }
+
   const savedStock = S.parse('mb-stock', null);
-  // Se não houver dados salvos OU os dados não tiverem desc, reseta com o cardápio completo
   if (!savedStock || !savedStock.length) {
     stock = DEFAULT_PRODUCTS.map(p => ({ ...p }));
     S.save('mb-stock', stock);
@@ -489,15 +501,53 @@ function saveMenuItem() {
 
 // ── QR ────────────────────────────────────────────
 function showQR(tableNumber) {
-  const url = (() => {
-    try { const u = new URL(window.location.href); u.searchParams.set('mesa', tableNumber); return u.toString(); }
-    catch { return `${window.location.href.split('?')[0]}?mesa=${tableNumber}`; }
-  })();
+  const proto  = window.location.protocol;
+  const host   = window.location.hostname;
+  const isFile = proto === 'file:';
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+
   document.getElementById('qrTitle').textContent = `QR Code — Mesa ${tableNumber}`;
-  const c = document.getElementById('qrContainer');
-  c.innerHTML = '';
-  if (typeof QRCode !== 'undefined') new QRCode(c, { text:url, width:200, height:200, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H });
-  document.getElementById('qrLinkText').innerHTML = `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+  const c      = document.getElementById('qrContainer');
+  const linkEl = document.getElementById('qrLinkText');
+  const noteEl = document.getElementById('qrNote');
+  c.innerHTML  = '';
+
+  if (isFile) {
+    c.innerHTML = `
+      <div style="padding:20px;text-align:center;display:grid;gap:10px">
+        <div style="font-size:2.5rem">⚠️</div>
+        <div style="font-family:var(--font-cond);font-size:1rem;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em">Arquivo local — QR inativo</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.6">
+          Abra via <code style="color:var(--yellow)">node server.js</code> para ativar.
+        </div>
+      </div>`;
+    linkEl.textContent = '';
+    if (noteEl) noteEl.style.display = 'none';
+    openModal('modalQR');
+    return;
+  }
+
+  const u = new URL(window.location.href);
+  u.searchParams.set('mesa', tableNumber);
+  const url = u.toString();
+
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(c, { text:url, width:200, height:200, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H });
+  }
+  linkEl.innerHTML = `<a href="${url}" target="_blank" rel="noopener" style="word-break:break-all">${url}</a>`;
+
+  if (isLocal && noteEl) {
+    noteEl.innerHTML = `
+      <span style="color:var(--orange)">⚠️ URL local — só funciona na sua rede Wi-Fi.</span><br>
+      <span style="font-size:0.78rem">Para qualquer pessoa acessar de fora, use o <strong style="color:var(--yellow)">ngrok</strong> ou faça deploy no <strong style="color:var(--yellow)">Railway</strong>.<br>
+      Veja as instruções no arquivo <code>DEPLOY.md</code>.</span>`;
+    noteEl.style.display = '';
+  } else if (noteEl) {
+    noteEl.innerHTML = '✅ QR Code público — qualquer pessoa pode escanear.';
+    noteEl.style.color = 'var(--green)';
+    noteEl.style.display = '';
+  }
+
   openModal('modalQR');
 }
 
@@ -655,4 +705,50 @@ function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdmi
     initTabs(); wireBtns(); renderAll();
   }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+  // ── PWA Install prompt ──────────────────────────
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Só mostra o banner de instalação no modo admin (não no cardápio do cliente)
+    if (!isClientMode()) showInstallBanner();
+  });
+
+  function showInstallBanner() {
+    if (document.getElementById('installBanner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'installBanner';
+    banner.style.cssText = `
+      position:fixed;bottom:20px;right:20px;z-index:999;
+      background:var(--bg-card);border:1px solid var(--yellow);
+      border-radius:var(--radius);padding:14px 18px;
+      display:flex;align-items:center;gap:14px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+      font-family:var(--font-body);max-width:320px;
+      animation:slideUp 300ms ease;
+    `;
+    banner.innerHTML = `
+      <style>@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+      <div style="font-size:2rem">📲</div>
+      <div style="flex:1">
+        <div style="font-family:var(--font-cond);font-weight:700;font-size:0.95rem;letter-spacing:.04em">Instalar App</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Adicione à tela inicial para acesso rápido</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button id="btnInstallPwa" style="padding:7px 14px;background:var(--yellow);color:#000;border:none;border-radius:8px;font-family:var(--font-cond);font-weight:700;font-size:0.82rem;cursor:pointer;letter-spacing:.04em">Instalar</button>
+        <button id="btnDismissInstall" style="padding:4px;background:none;border:none;color:var(--text-muted);font-size:0.75rem;cursor:pointer">Agora não</button>
+      </div>
+    `;
+    document.body.appendChild(banner);
+    document.getElementById('btnInstallPwa').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      banner.remove();
+      if (outcome === 'accepted') toast('App instalado com sucesso! 🎉');
+    });
+    document.getElementById('btnDismissInstall').addEventListener('click', () => banner.remove());
+  }
 })();

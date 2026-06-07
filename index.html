@@ -2,14 +2,30 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="description" content="Maromba Burguer — Sistema de gestão para hamburguerias." />
-  <link rel="manifest" href="manifest.json" />
+
+  <!-- PWA -->
+  <link rel="manifest" id="pwaManifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="logo.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Maromba Burguer" />
-  <title>Maromba Burguer — Painel de Gestão</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" id="pwaTitle" content="Maromba Burguer" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <title id="pageTitle">Maromba Burguer — Painel de Gestão</title>
+
+  <script>
+    // Troca o manifest para o cardápio do cliente se vier via QR (?mesa=XX)
+    (function() {
+      if (new URLSearchParams(window.location.search).get('mesa')) {
+        document.getElementById('pwaManifest').href = 'manifest-cliente.json';
+        document.getElementById('pwaTitle').content = 'Maromba Burguer';
+        document.getElementById('pageTitle').textContent = 'Maromba Burguer — Cardápio';
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="styles.css" />
@@ -365,9 +381,9 @@
       <button class="btn btn-secondary btn-sm" data-close="modalQR">✕</button>
     </div>
     <div class="modal-body" style="text-align:center;gap:16px">
-      <div class="qr-wrap" id="qrContainer"></div>
+      <div id="qrContainer" style="display:grid;place-items:center;min-height:80px"></div>
       <p id="qrLinkText" class="qr-link"></p>
-      <p class="text-muted text-sm">Escaneie para abrir o cardápio e fazer o pedido direto do celular.</p>
+      <p id="qrNote" class="text-muted text-sm">Escaneie para abrir o cardápio e fazer o pedido direto do celular.</p>
     </div>
   </div>
 </div>
