@@ -250,14 +250,19 @@ function renderOrders() {
 
   document.getElementById('tbActive').innerHTML = active.length ? active.map(o => `
     <tr>
-      <td><strong>${o.id}</strong></td>
-      <td>Mesa ${o.table}</td>
-      <td>${o.customer}</td>
-      <td class="text-muted">${(o.items||[]).length} item(s)</td>
-      <td class="text-yellow font-cond">${fmt(orderTotal(o))}</td>
+      <td><strong>${o.id}</strong><br><span class="text-muted text-sm">${new Date(o.createdAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span></td>
+      <td><strong>Mesa ${o.table}</strong></td>
+      <td>${o.customer}${o.notes ? `<br><span class="text-muted text-sm" style="font-style:italic">${o.notes}</span>` : ''}</td>
+      <td>
+        <div style="display:grid;gap:3px">
+          ${(o.items||[]).map(i => `<div style="font-size:0.82rem"><span style="color:var(--yellow);font-weight:700">${i.quantity}x</span> ${i.name} <span class="text-muted">— ${fmt(i.price * i.quantity)}</span></div>`).join('')}
+        </div>
+      </td>
+      <td class="text-yellow font-cond" style="font-size:1.1rem">${fmt(orderTotal(o))}</td>
       <td>${getStatusBadge(o.status)}</td>
-      <td><div class="flex gap-8">
-        <button class="btn btn-secondary btn-sm" data-action="edit-order" data-id="${o.id}">✏️ Editar</button>
+      <td><div class="flex gap-8" style="flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" data-action="print-order" data-id="${o.id}" title="Imprimir">🖨️</button>
+        <button class="btn btn-secondary btn-sm" data-action="edit-order" data-id="${o.id}">✏️</button>
         ${o.status !== 'Entregue'
           ? `<button class="btn btn-outline-yellow btn-sm" data-action="advance-status" data-id="${o.id}">▶ Avançar</button>`
           : `<button class="btn btn-primary btn-sm" data-action="pay-order" data-id="${o.id}">💳 Fechar</button>`}
@@ -685,6 +690,7 @@ document.addEventListener('click', e => {
   const { action, id, table } = btn.dataset;
   switch (action) {
     case 'open-table':      { const o = orders.find(x => x.table === table && x.status !== 'Pago'); openOrderModal(table, o?.id); break; }
+    case 'print-order':     printOrder(id); break;
     case 'edit-order':      { const o = orders.find(x => x.id === id); if (o) openOrderModal(o.table, id); break; }
     case 'advance-status':  advanceStatus(id); break;
     case 'pay-order':       openPayment(id); break;
@@ -749,6 +755,93 @@ function wireBtns() {
   document.getElementById('btnSaveStock').addEventListener('click', saveStockProduct);
   document.getElementById('btnAddMenu').addEventListener('click', openMenuModal);
   document.getElementById('btnSaveMenu').addEventListener('click', saveMenuItem);
+}
+
+function printOrder(orderId) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+
+  const items = (o.items || []);
+  const total = orderTotal(o);
+  const now   = new Date().toLocaleString('pt-BR');
+  const createdAt = o.createdAt ? new Date(o.createdAt).toLocaleString('pt-BR') : now;
+
+  const win = window.open('', '_blank', 'width=400,height=600');
+  win.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>Pedido ${o.id}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    width: 80mm;
+    padding: 4mm;
+    color: #000;
+    background: #fff;
+  }
+  .center { text-align: center; }
+  .bold   { font-weight: bold; }
+  .large  { font-size: 16px; }
+  .xlarge { font-size: 20px; font-weight: bold; }
+  .divider { border-top: 1px dashed #000; margin: 6px 0; }
+  .row { display: flex; justify-content: space-between; margin: 2px 0; }
+  .item-name { flex: 1; }
+  .item-price { text-align: right; white-space: nowrap; margin-left: 8px; }
+  .total-row { display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin: 4px 0; }
+  .footer { text-align: center; margin-top: 8px; font-size: 10px; color: #555; }
+  @media print {
+    body { width: 80mm; }
+    @page { margin: 0; size: 80mm auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="center xlarge">MAROMBA BURGUER</div>
+  <div class="center" style="font-size:10px;margin-bottom:4px">🍔 Hamburguer ia Premium</div>
+  <div class="divider"></div>
+
+  <div class="row"><span class="bold">Pedido:</span><span>${o.id}</span></div>
+  <div class="row"><span class="bold">Mesa:</span><span>${o.table}</span></div>
+  <div class="row"><span class="bold">Cliente:</span><span>${o.customer}</span></div>
+  <div class="row"><span class="bold">Data:</span><span>${createdAt}</span></div>
+  ${o.notes ? `<div class="row"><span class="bold">Obs:</span><span style="flex:1;margin-left:4px;font-style:italic">${o.notes}</span></div>` : ''}
+
+  <div class="divider"></div>
+  <div class="bold center" style="margin-bottom:4px">ITENS DO PEDIDO</div>
+
+  ${items.map(i => `
+  <div>
+    <div class="row">
+      <span class="item-name bold">${i.quantity}x ${i.name}</span>
+      <span class="item-price">${fmt(i.price * i.quantity)}</span>
+    </div>
+    <div style="font-size:10px;color:#555;margin-left:12px">Unit: ${fmt(i.price)}</div>
+  </div>`).join('')}
+
+  <div class="divider"></div>
+  <div class="total-row">
+    <span>TOTAL:</span>
+    <span>${fmt(total)}</span>
+  </div>
+  <div class="divider"></div>
+
+  <div class="footer">
+    <div>Impresso em: ${now}</div>
+    <div style="margin-top:4px">Obrigado pela preferência! 💪</div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      window.print();
+      setTimeout(function() { window.close(); }, 1000);
+    };
+  </script>
+</body>
+</html>`);
+  win.document.close();
 }
 
 function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdminMenu(); }
