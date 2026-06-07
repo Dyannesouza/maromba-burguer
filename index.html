@@ -392,6 +392,16 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="maromba.js" defer></script>
+<script>
+  // Carrega script correto dependendo do modo
+  (function() {
+    var script = document.createElement('script');
+    var isMesa = new URLSearchParams(window.location.search).get('mesa');
+    // cliente.js nunca é cacheado pelo SW
+    script.src = isMesa ? '/cliente.js?v=' + Date.now() : 'maromba.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  })();
+</script>
 </body>
 </html>

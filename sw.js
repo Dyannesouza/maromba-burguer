@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maromba-burguer-v5';
+const CACHE_NAME = 'maromba-burguer-v6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -40,8 +40,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Também não cacheia maromba.js para garantir updates
-  if (url.pathname.includes('maromba.js')) {
+  // Nunca cacheia scripts dinâmicos
+  if (url.pathname.includes('maromba.js') || url.pathname.includes('cliente.js')) {
     event.respondWith(fetch(event.request, { cache: 'no-store' }));
     return;
   }
