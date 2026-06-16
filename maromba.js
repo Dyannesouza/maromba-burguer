@@ -126,6 +126,93 @@ let payOrderId   = null;
 let adminMenuCat = 'all';
 let adminStockCat = 'all';
 
+// ── AUTH ──────────────────────────────────────────
+const AUTH_KEY = 'mb-auth';
+
+function isLoggedIn() {
+  return sessionStorage.getItem(AUTH_KEY) === 'true';
+}
+
+function showLogin() {
+  document.getElementById('loginShell').classList.remove('hidden');
+  document.getElementById('adminShell').classList.add('hidden');
+  document.getElementById('clientShell').classList.add('hidden');
+}
+
+function showAdmin() {
+  document.getElementById('loginShell').classList.add('hidden');
+  document.getElementById('adminShell').classList.remove('hidden');
+}
+
+function logout() {
+  sessionStorage.removeItem(AUTH_KEY);
+  showLogin();
+  toast('Sessão encerrada.', 'error');
+}
+
+function initLogin() {
+  const btnLogin      = document.getElementById('btnLogin');
+  const btnTogglePass = document.getElementById('btnTogglePass');
+  const loginPass     = document.getElementById('loginPass');
+  const loginError    = document.getElementById('loginError');
+
+  // Mostrar/ocultar senha
+  btnTogglePass.addEventListener('click', () => {
+    const isText = loginPass.type === 'text';
+    loginPass.type = isText ? 'password' : 'text';
+    btnTogglePass.textContent = isText ? '👁' : '🙈';
+  });
+
+  // Submeter com Enter
+  [document.getElementById('loginUser'), loginPass].forEach(el => {
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') btnLogin.click(); });
+  });
+
+  btnLogin.addEventListener('click', async () => {
+    const username = document.getElementById('loginUser').value.trim();
+    const password = loginPass.value;
+    if (!username || !password) {
+      loginError.textContent = '⚠️ Preencha usuário e senha.';
+      loginError.classList.remove('hidden');
+      return;
+    }
+    btnLogin.disabled = true;
+    btnLogin.textContent = 'Verificando...';
+    loginError.classList.add('hidden');
+
+    try {
+      const res  = await fetch('/api/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        showAdmin();
+        await loadData();
+        initTabs(); wireBtns(); renderAll();
+        // Auto-refresh
+        if (USE_API) {
+          setInterval(async () => {
+            const fresh = await API.get('/api/orders');
+            if (Array.isArray(fresh)) { orders = fresh.map(o => ({...o, items: Array.isArray(o.items) ? o.items : []})); renderOrders(); }
+          }, 5000);
+        }
+      } else {
+        loginError.textContent = '⚠️ ' + (data.error || 'Usuário ou senha incorretos.');
+        loginError.classList.remove('hidden');
+      }
+    } catch {
+      loginError.textContent = '⚠️ Erro de conexão. Tente novamente.';
+      loginError.classList.remove('hidden');
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Entrar no Painel';
+    }
+  });
+}
+
 // ── INIT ──────────────────────────────────────────
 async function loadData() {
   if (USE_API) {
@@ -848,28 +935,42 @@ function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdmi
 
 // ── MAIN ──────────────────────────────────────────
 (async function main() {
-  await loadData();
+  // Modo cliente via QR — nunca exige login
   if (isClientMode()) {
+    await loadData();
     initClientMode();
-  } else {
-    initTabs(); wireBtns(); renderAll();
-  }
-  // Service Worker apenas no painel admin — no modo cliente (QR) desativa para garantir API funcionando
-  if ('serviceWorker' in navigator) {
-    if (isClientMode()) {
-      // Desregistra qualquer SW no modo cliente para não bloquear chamadas de API
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-    } else {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
     }
+    return;
   }
 
-  // Auto-refresh pedidos a cada 5 segundos (só no painel admin online)
-  if (USE_API && !isClientMode()) {
+  // Modo admin — registra SW
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // Botão de logout (sempre wire, independente do estado)
+  document.getElementById('btnLogout').addEventListener('click', logout);
+
+  // Se já tem sessão ativa, vai direto pro painel
+  if (isLoggedIn() && USE_API) {
+    showAdmin();
+    await loadData();
+    initTabs(); wireBtns(); renderAll();
     setInterval(async () => {
       const fresh = await API.get('/api/orders');
       if (Array.isArray(fresh)) { orders = fresh.map(o => ({...o, items: Array.isArray(o.items) ? o.items : []})); renderOrders(); }
     }, 5000);
+  } else if (!USE_API) {
+    // Desenvolvimento local via file:// — pula login
+    showAdmin();
+    await loadData();
+    initTabs(); wireBtns(); renderAll();
+  } else {
+    // Exibe tela de login
+    showLogin();
+    initLogin();
   }
 
   // ── PWA Install prompt ──────────────────────────
@@ -877,7 +978,6 @@ function renderAll() { renderOrders(); renderTables(); renderStock(); renderAdmi
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    // Só mostra o banner de instalação no modo admin (não no cardápio do cliente)
     if (!isClientMode()) showInstallBanner();
   });
 
