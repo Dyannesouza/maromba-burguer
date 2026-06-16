@@ -23,6 +23,11 @@ const MIME = {
   '.webp': 'image/webp',
 };
 
+// ── CREDENCIAIS DO ADMINISTRADOR ─────────────────
+// Para alterar: modifique ADMIN_USER e ADMIN_PASS abaixo
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'maromba123';
+
 // ── BANCO DE DADOS EM MEMÓRIA ─────────────────────
 // Persiste enquanto o servidor estiver rodando
 // No Railway, reinicia ao fazer redeploy (dados zerados)
@@ -76,6 +81,15 @@ const server = http.createServer(async function (req, res) {
 
   // ── API ROUTES ──────────────────────────────────
   if (url.startsWith('/api/')) {
+
+    // POST /api/login — autenticação do administrador
+    if (url === '/api/login' && req.method === 'POST') {
+      const body = await readBody(req);
+      if (body.username === ADMIN_USER && body.password === ADMIN_PASS) {
+        return jsonResponse(res, { ok: true });
+      }
+      return jsonResponse(res, { ok: false, error: 'Usuário ou senha incorretos.' }, 401);
+    }
 
     // GET /api/orders — lista todos os pedidos
     if (url === '/api/orders' && req.method === 'GET') {
