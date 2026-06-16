@@ -3,69 +3,65 @@
 ═══════════════════════════════════════════════ */
 
 // ── DATA VERSION (bump to force localStorage reset) ──
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 
 // ── CONSTANTS ──────────────────────────────────
 const CAT_LABELS = {
-  hamburgues:      '🍔 Hambúrgueres',
-  acompanhamentos: '🍟 Acompanhamentos',
-  bebidas:         '🥤 Bebidas',
-  sobremesas:      '🍨 Sobremesas',
+  hamburgues:  '🍔 Hambúrgueres',
+  espetinhos:  '🍢 Espetinhos',
+  combos:      '🍱 Combos',
+  caldinhos:   '🍲 Caldinhos',
+  bebidas:     '🥤 Bebidas',
 };
 
 const CAT_EMOJI = {
-  hamburgues:      '🍔',
-  acompanhamentos: '🍟',
-  bebidas:         '🥤',
-  sobremesas:      '🍨',
+  hamburgues:  '🍔',
+  espetinhos:  '🍢',
+  combos:      '🍱',
+  caldinhos:   '🍲',
+  bebidas:     '🥤',
 };
 
 const CATS = Object.keys(CAT_LABELS);
 
 const DEFAULT_PRODUCTS = [
   // ── Hambúrgueres ─────────────────────────────
-  { id:'h01', name:'Smash Burguer Clássico',       price:28.90, category:'hamburgues',      quantity:30, desc:'Blend 150g smashado, cheddar cremoso, picles, mostarda e ketchup artesanal.' },
-  { id:'h02', name:'Maromba Beast',                price:42.90, category:'hamburgues',      quantity:20, desc:'Dois blends 150g, bacon defumado, cheddar duplo e molho especial da casa.' },
-  { id:'h03', name:'Chicken Crispy',               price:32.90, category:'hamburgues',      quantity:25, desc:'Frango empanado crocante, maionese de alho, alface e tomate.' },
-  { id:'h04', name:'BBQ Smokehouse',               price:39.90, category:'hamburgues',      quantity:22, desc:'Blend 180g, molho BBQ defumado, cebola caramelizada, queijo gouda e bacon.' },
-  { id:'h05', name:'X-Tudo da Casa',               price:36.90, category:'hamburgues',      quantity:18, desc:'Blend 150g, ovo, bacon, presunto, queijo prato, alface e tomate.' },
-  { id:'h06', name:'Burguer Vegetariano',          price:29.90, category:'hamburgues',      quantity:20, desc:'Blend de grão-de-bico, queijo prato derretido, rúcula e maionese de ervas.' },
-  { id:'h07', name:'Truffle & Mushroom',           price:44.90, category:'hamburgues',      quantity:15, desc:'Blend 180g, cogumelos shimeji, queijo gruyère e maionese de trufas.' },
-  { id:'h08', name:'Crispy Bacon Lovers',          price:38.90, category:'hamburgues',      quantity:18, desc:'Blend 150g, bacon crispy em dobro, cheddar, maionese defumada e pepperoni.' },
-  { id:'h09', name:'Frango Buffalo',               price:33.90, category:'hamburgues',      quantity:22, desc:'Frango no molho buffalo picante, queijo azul, alface e molho ranch.' },
-  { id:'h10', name:'Kids Burguer',                 price:22.90, category:'hamburgues',      quantity:30, desc:'Blend 100g, queijo prato, ketchup e maionese. Porção infantil.' },
-  // ── Acompanhamentos ──────────────────────────
-  { id:'a01', name:'Batata Frita Clássica',        price:16.50, category:'acompanhamentos', quantity:60, desc:'Batata palito frita em óleo de girassol com sal e páprica.' },
-  { id:'a02', name:'Batata Frita com Cheddar',     price:22.90, category:'acompanhamentos', quantity:50, desc:'Batata frita coberta com molho de cheddar cremoso.' },
-  { id:'a03', name:'Batata Frita com Bacon',       price:24.90, category:'acompanhamentos', quantity:45, desc:'Batata frita com bacon crocante picado e cebolinha.' },
-  { id:'a04', name:'Batata Rústica Temperada',     price:19.90, category:'acompanhamentos', quantity:40, desc:'Wedges de batata com casca, alho e ervas finas.' },
-  { id:'a05', name:'Anéis de Cebola',              price:18.90, category:'acompanhamentos', quantity:40, desc:'Cebola empanada crocante com molho ranch.' },
-  { id:'a06', name:'Nuggets de Frango (8 un)',     price:21.90, category:'acompanhamentos', quantity:45, desc:'Nuggets artesanais de peito de frango com molho barbecue.' },
-  { id:'a07', name:'Onion Rings BBQ',              price:20.90, category:'acompanhamentos', quantity:35, desc:'Anéis de cebola gigantes com molho BBQ defumado.' },
-  { id:'a08', name:'Mac n Cheese Frito',           price:23.90, category:'acompanhamentos', quantity:28, desc:'Bolinhas de macarrão com queijo empanadas e fritas.' },
-  { id:'a09', name:'Coleslaw da Casa',             price:12.90, category:'acompanhamentos', quantity:35, desc:'Salada de repolho cremosa com cenoura, maionese e limão.' },
-  { id:'a10', name:'Batata Doce Frita',            price:21.90, category:'acompanhamentos', quantity:30, desc:'Batata doce frita com alecrim e flor de sal.' },
+  { id:'h01', name:'Natural',         price:19.00, category:'hamburgues', quantity:50, desc:'1 Carne de 150g, Queijo Cheddar, Tomate, Alface, Molho da Casa, Cebola Caramelizada.' },
+  { id:'h02', name:'Duplo Bíceps',    price:32.99, category:'hamburgues', quantity:50, desc:'2 Carnes de 150g, Queijo Cheddar, Molho da Casa, Cebola Caramelizada.' },
+  { id:'h03', name:'Tríceps Francesa',price:46.99, category:'hamburgues', quantity:50, desc:'3 Carnes de 150g, Queijo Cheddar, Bacon, Cebola Caramelizada.' },
+  { id:'h04', name:'Hormonizado',     price:54.99, category:'hamburgues', quantity:50, desc:'4 Carnes de 150g, Queijo Cheddar, Bacon, Molho da Casa, Cebola Caramelizada.' },
+  { id:'h05', name:'Cupim Maromba',   price:38.59, category:'hamburgues', quantity:50, desc:'Carne de 150g, Queijo Coalho, Cream Cheese, Cupim, Cebola Caramelizada, Molho Especial.' },
+  { id:'h06', name:'Costela',         price:39.99, category:'hamburgues', quantity:50, desc:'Carne de 150g, Queijo Coalho, Molho Especial, Cebola Caramelizada.' },
+  { id:'h07', name:'Thakaray',        price:49.99, category:'hamburgues', quantity:50, desc:'2 Carnes de 150g, Queijo Coalho, Geleia de Bacon, Cebola Empanada, Salada e Molho da Casa.' },
+  // ── Espetinhos ───────────────────────────────
+  { id:'e01', name:'Espetinho de Carne',            price:12.99, category:'espetinhos', quantity:50, desc:'' },
+  { id:'e02', name:'Espetinho de Coração',          price:12.99, category:'espetinhos', quantity:50, desc:'' },
+  { id:'e03', name:'Espetinho Frango com Bacon',    price:14.99, category:'espetinhos', quantity:50, desc:'' },
+  { id:'e04', name:'Espetinho Carne com Bacon',     price:14.99, category:'espetinhos', quantity:50, desc:'' },
+  { id:'e05', name:'Espetinho Frango com Queijo',   price:14.99, category:'espetinhos', quantity:50, desc:'' },
+  { id:'e06', name:'Espetinho Carne de Sol com Queijo', price:14.99, category:'espetinhos', quantity:50, desc:'' },
+  { id:'e07', name:'Cupim com Fritas',              price:35.99, category:'espetinhos', quantity:50, desc:'' },
+  // ── Combos ───────────────────────────────────
+  { id:'c01', name:'Combo Natural',  price:59.99, category:'combos', quantity:50, desc:'2 Naturais + Porção de Fritas + Antártica 1 Litro.' },
+  { id:'c02', name:'Combo Duplo',    price:79.99, category:'combos', quantity:50, desc:'2 Duplos + Porção de Fritas + Antártica 1 Litro.' },
+  { id:'c03', name:'Combo Família',  price:89.99, category:'combos', quantity:50, desc:'4 Naturais + Porção de Fritas + Antártica 1 Litro.' },
+  // ── Caldinhos ────────────────────────────────
+  { id:'k01', name:'Caldinho de Feijão',   price:11.00, category:'caldinhos', quantity:50, desc:'' },
+  { id:'k02', name:'Caldinho de Camarão',  price:11.99, category:'caldinhos', quantity:50, desc:'' },
   // ── Bebidas ──────────────────────────────────
-  { id:'b01', name:'Refrigerante Lata 350ml',      price: 7.90, category:'bebidas',         quantity:80, desc:'Coca-Cola, Pepsi, Guaraná Antarctica ou Sprite.' },
-  { id:'b02', name:'Refrigerante 600ml',           price:11.90, category:'bebidas',         quantity:60, desc:'Coca-Cola, Pepsi, Guaraná Antarctica ou Sprite.' },
-  { id:'b03', name:'Água Mineral 500ml',           price: 5.00, category:'bebidas',         quantity:80, desc:'Água mineral sem gás ou com gás.' },
-  { id:'b04', name:'Suco Natural de Laranja',      price:13.90, category:'bebidas',         quantity:35, desc:'Suco de laranja espremido na hora, 400ml.' },
-  { id:'b05', name:'Suco de Maracujá',             price:13.90, category:'bebidas',         quantity:30, desc:'Suco de maracujá natural batido, 400ml.' },
-  { id:'b06', name:'Limonada Suíça',               price:14.90, category:'bebidas',         quantity:30, desc:'Limonada cremosa com leite condensado e menta, 400ml.' },
-  { id:'b07', name:'Milkshake Oreo',               price:19.90, category:'bebidas',         quantity:25, desc:'Sorvete de baunilha com biscoito Oreo, 400ml.' },
-  { id:'b08', name:'Milkshake Morango',            price:19.90, category:'bebidas',         quantity:25, desc:'Sorvete de morango com calda artesanal, 400ml.' },
-  { id:'b09', name:'Milkshake Chocolate',          price:19.90, category:'bebidas',         quantity:25, desc:'Sorvete de chocolate belga, 400ml.' },
-  { id:'b10', name:'Cerveja Artesanal IPA 350ml',  price:16.90, category:'bebidas',         quantity:40, desc:'IPA artesanal gelada, produção local.' },
-  { id:'b11', name:'Cerveja Long Neck',            price:12.90, category:'bebidas',         quantity:50, desc:'Long neck gelada, marcas variadas.' },
-  { id:'b12', name:'Cha Gelado Pessego/Limao',     price: 9.90, category:'bebidas',         quantity:35, desc:'Chá gelado artesanal, 400ml.' },
-  // ── Sobremesas ───────────────────────────────
-  { id:'s01', name:'Brownie com Sorvete',          price:18.90, category:'sobremesas',      quantity:20, desc:'Brownie quente com sorvete de creme e calda de chocolate.' },
-  { id:'s02', name:'Cheesecake Frutas Vermelhas',  price:17.90, category:'sobremesas',      quantity:18, desc:'Fatia de cheesecake com calda de frutas vermelhas.' },
-  { id:'s03', name:'Sorvete 2 Bolas',              price:10.90, category:'sobremesas',      quantity:30, desc:'Duas bolas — creme, chocolate, morango ou coco.' },
-  { id:'s04', name:'Casquinha Simples',            price: 6.90, category:'sobremesas',      quantity:40, desc:'Casquinha com 1 bola de sorvete, sabores variados.' },
-  { id:'s05', name:'Cookie com Sorvete',           price:16.90, category:'sobremesas',      quantity:15, desc:'Cookie gigante quentinho com sorvete e calda de caramelo.' },
-  { id:'s06', name:'Pudim de Leite Condensado',    price:12.90, category:'sobremesas',      quantity:20, desc:'Fatia de pudim cremoso com calda de caramelo.' },
-  { id:'s07', name:'Banana Split',                 price:19.90, category:'sobremesas',      quantity:15, desc:'Banana, 3 bolas de sorvete, chantilly e chocolate.' },
+  { id:'b01', name:'Coca Lata',       price: 6.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b02', name:'Coca 1L',         price:10.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b03', name:'Antártica Lata',  price: 6.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b04', name:'Skinha',          price: 7.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b05', name:'Antártica 1L',    price:10.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b06', name:'Limoneto',        price: 7.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b07', name:'Água',            price: 3.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b08', name:'Dose Alcatrão',   price: 5.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b09', name:'Dose Whisky',     price:14.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b10', name:'Heineken 600ml',  price:16.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b11', name:'Heineken Long',   price:10.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b12', name:'Corona Long',     price:12.00, category:'bebidas', quantity:80, desc:'' },
+  { id:'b13', name:'Brahma',          price:10.00, category:'bebidas', quantity:80, desc:'' },
 ];
 
 // Todos os produtos vão pro cardápio por padrão
