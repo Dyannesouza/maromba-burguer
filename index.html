@@ -24,9 +24,12 @@
         document.getElementById('pwaManifest').href = 'manifest-cliente.json';
         document.getElementById('pwaTitle').content = 'Maromba Burguer';
         document.getElementById('pageTitle').textContent = 'Maromba Burguer — Cardápio';
-      } else {
-        // Modo admin: mostra login por padrão (maromba.js decide o fluxo)
+      } else if (window.location.protocol !== 'file:') {
+        // Modo admin via servidor: mostra login (maromba.js decide o fluxo)
         document.getElementById('loginShell').classList.remove('hidden');
+      } else {
+        // Modo desenvolvimento local (file://): pula login, vai direto pro admin
+        document.getElementById('adminShell').classList.remove('hidden');
       }
     })();
   </script>
@@ -363,9 +366,10 @@
         <label>Categoria</label>
         <select id="fStockCat">
           <option value="hamburgues">🍔 Hambúrgueres</option>
-          <option value="acompanhamentos">🍟 Acompanhamentos</option>
+          <option value="espetinhos">🍢 Espetinhos</option>
+          <option value="combos">🍱 Combos</option>
+          <option value="caldinhos">🍲 Caldinhos</option>
           <option value="bebidas">🥤 Bebidas</option>
-          <option value="sobremesas">🍨 Sobremesas</option>
         </select>
       </div>
       <div class="field">
@@ -396,9 +400,10 @@
         <label>Categoria no cardápio</label>
         <select id="fMenuCat">
           <option value="hamburgues">🍔 Hambúrgueres</option>
-          <option value="acompanhamentos">🍟 Acompanhamentos</option>
+          <option value="espetinhos">🍢 Espetinhos</option>
+          <option value="combos">🍱 Combos</option>
+          <option value="caldinhos">🍲 Caldinhos</option>
           <option value="bebidas">🥤 Bebidas</option>
-          <option value="sobremesas">🍨 Sobremesas</option>
         </select>
       </div>
     </div>
