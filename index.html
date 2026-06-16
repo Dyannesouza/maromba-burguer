@@ -19,10 +19,14 @@
   <script>
     // Troca o manifest para o cardápio do cliente se vier via QR (?mesa=XX)
     (function() {
-      if (new URLSearchParams(window.location.search).get('mesa')) {
+      const isMesa = new URLSearchParams(window.location.search).get('mesa');
+      if (isMesa) {
         document.getElementById('pwaManifest').href = 'manifest-cliente.json';
         document.getElementById('pwaTitle').content = 'Maromba Burguer';
         document.getElementById('pageTitle').textContent = 'Maromba Burguer — Cardápio';
+      } else {
+        // Modo admin: mostra login por padrão (maromba.js decide o fluxo)
+        document.getElementById('loginShell').classList.remove('hidden');
       }
     })();
   </script>
@@ -33,9 +37,40 @@
 <body>
 
 <!-- ══════════════════════════════════════════════
+     LOGIN SHELL
+══════════════════════════════════════════════ -->
+<div id="loginShell" class="login-shell hidden">
+  <div class="login-card">
+    <div class="login-logo-wrap">
+      <div class="brand-logo login-logo" aria-label="Logo"></div>
+    </div>
+    <div class="login-brand">
+      <div class="login-brand-name">Maromba <span>Burguer</span></div>
+      <div class="login-brand-sub">Painel de Gestão</div>
+    </div>
+    <div class="login-form">
+      <div class="field">
+        <label>Usuário</label>
+        <input type="text" id="loginUser" placeholder="Digite seu usuário" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <div class="login-pass-wrap">
+          <input type="password" id="loginPass" placeholder="Digite sua senha" autocomplete="current-password" />
+          <button class="login-eye-btn" id="btnTogglePass" type="button" title="Mostrar/ocultar senha">👁</button>
+        </div>
+      </div>
+      <div class="login-error hidden" id="loginError">⚠️ Usuário ou senha incorretos.</div>
+      <button class="login-btn" id="btnLogin">Entrar no Painel</button>
+    </div>
+    <div class="login-footer">Acesso restrito a administradores.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
      ADMIN SHELL
 ══════════════════════════════════════════════ -->
-<div id="adminShell">
+<div id="adminShell" class="hidden">
 
   <header class="site-header">
     <div class="brand-row">
@@ -46,6 +81,7 @@
       </div>
     </div>
     <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="btnLogout">🚪 Sair</button>
       <button class="btn btn-primary btn-lg" id="btnNewOrder">＋ Novo Pedido</button>
     </div>
   </header>
