@@ -5,13 +5,18 @@
 ═══════════════════════════════════════════════ */
 
 const CAT_LABELS = {
-  hamburgues:      '🍔 Hambúrgueres',
-  acompanhamentos: '🍟 Acompanhamentos',
-  bebidas:         '🥤 Bebidas',
-  sobremesas:      '🍨 Sobremesas',
+  hamburgues:  '🍔 Hambúrgueres',
+  espetinhos:  '🍢 Espetinhos',
+  combos:      '🍱 Combos',
+  caldinhos:   '🍲 Caldinhos',
+  bebidas:     '🥤 Bebidas',
 };
 const CAT_EMOJI = {
-  hamburgues: '🍔', acompanhamentos: '🍟', bebidas: '🥤', sobremesas: '🍨',
+  hamburgues:  '🍔',
+  espetinhos:  '🍢',
+  combos:      '🍱',
+  caldinhos:   '🍲',
+  bebidas:     '🥤',
 };
 const CATS = Object.keys(CAT_LABELS);
 const fmt  = v => `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
